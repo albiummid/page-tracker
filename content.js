@@ -2,9 +2,15 @@
 (function() {
   'use strict';
 
+  // Prevent multiple injections
+  if (window.__pageTrackerInjected) {
+    return;
+  }
+  window.__pageTrackerInjected = true;
+
   // Simple hash function for change detection
   function getPageContentHash() {
-    const textContent = document.body.innerText || '';
+    const textContent = document.body ? document.body.innerText || '' : '';
     let hash = 0;
     for (let i = 0; i < textContent.length; i++) {
       const char = textContent.charCodeAt(i);
@@ -14,19 +20,10 @@
     return hash.toString();
   }
 
-  // Get current URL
-  const currentUrl = window.location.href;
-
   // Check for changes
   function checkChange() {
-    console.log('Page Tracker: Checking for changes...', currentUrl);
-
-    if (!document.body) {
-      console.log('Page Tracker: Body not ready, skipping check.');
-      return;
-    }
-
-    // Get all trackings and find matching one
+    const currentUrl = window.location.href;
+    
     chrome.storage.local.get(['trackings'], (result) => {
       if (chrome.runtime.lastError) {
         console.error('Page Tracker: Storage error', chrome.runtime.lastError);
@@ -44,29 +41,20 @@
       });
 
       if (!matchingTracking) {
-        console.log('Page Tracker: No active tracking found for', currentUrl);
         return;
       }
-
-      console.log('Page Tracker: Found matching tracking', matchingTracking.id);
 
       const currentHash = getPageContentHash();
       const lastHash = matchingTracking.lastContentHash;
 
-      console.log('Page Tracker: Last Hash:', lastHash);
-      console.log('Page Tracker: Current Hash:', currentHash);
-
-      // Check if content changed
       if (lastHash && lastHash !== currentHash) {
-        console.log('Page Tracker: Change detected! Notifying background...');
+        console.log('Page Tracker: Change detected on', matchingTracking.id);
         
         chrome.runtime.sendMessage({ 
           action: 'CONTENT_CHANGED', 
           trackingId: matchingTracking.id,
           url: currentUrl
         });
-      } else {
-        console.log('Page Tracker: No changes detected.');
       }
 
       // Update hash in storage
@@ -75,18 +63,20 @@
     });
   }
 
-  // Run comparison on load with a slight delay to ensure page is ready
+  // Run check when page is fully loaded
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(checkChange, 500);
+      // Wait for dynamic content to settle
+      setTimeout(checkChange, 1000);
     });
   } else {
-    setTimeout(checkChange, 500);
+    // Page already loaded, wait for any dynamic content
+    setTimeout(checkChange, 1000);
   }
 
-  // Also check after window load event (images and other resources loaded)
+  // Also check after window fully loads (including images)
   window.addEventListener('load', () => {
-    setTimeout(checkChange, 1000);
+    setTimeout(checkChange, 500);
   });
 
 })();

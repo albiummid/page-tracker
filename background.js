@@ -82,7 +82,13 @@ class MultiPageTrackerService {
   }
 
   startTracking(trackingId, url, min, max) {
-    // Stop existing timer for this tracking
+    // Prevent duplicate starts - check if already tracking this ID
+    if (this.timers.has(trackingId)) {
+      console.log('Background: Already tracking', trackingId, 'ignoring duplicate start');
+      return;
+    }
+
+    // Stop existing timer for this tracking (in case there are orphaned timers)
     this.stopTracking(trackingId);
 
     console.log('Background: Starting tracking', trackingId, url);
@@ -94,13 +100,20 @@ class MultiPageTrackerService {
         return;
       }
 
+      // Double-check timer wasn't created while we were opening the tab
+      if (this.timers.has(trackingId)) {
+        console.log('Background: Timer created while opening tab, aborting');
+        return;
+      }
+
       this.trackings.set(trackingId, {
         id: trackingId,
         url: url,
         tabId: tabId,
         minInterval: min,
         maxInterval: max,
-        lastContentHash: null
+        lastContentHash: null,
+        isTracking: true
       });
 
       this.scheduleNextRefresh(trackingId, min, max);
@@ -112,12 +125,21 @@ class MultiPageTrackerService {
 
     const timerData = this.timers.get(trackingId);
     if (timerData) {
-      if (timerData.timer) clearTimeout(timerData.timer);
-      if (timerData.countdown) clearInterval(timerData.countdown);
+      if (timerData.timer) {
+        clearTimeout(timerData.timer);
+        timerData.timer = null;
+      }
+      if (timerData.countdown) {
+        clearInterval(timerData.countdown);
+        timerData.countdown = null;
+      }
       this.timers.delete(trackingId);
     }
 
     this.trackings.delete(trackingId);
+    
+    // Also clear the timeLeft in storage
+    this.updateTrackingTimeLeft(trackingId, null);
   }
 
   findOrOpenTab(url, callback) {
@@ -145,29 +167,48 @@ class MultiPageTrackerService {
     const tracking = this.trackings.get(trackingId);
     if (!tracking) return;
 
+    // Clear any existing timers first to prevent overlap
+    const existingTimer = this.timers.get(trackingId);
+    if (existingTimer) {
+      if (existingTimer.timer) clearTimeout(existingTimer.timer);
+      if (existingTimer.countdown) clearInterval(existingTimer.countdown);
+    }
+
     const interval = Math.floor(Math.random() * (max - min + 1) + min) * 1000;
     let timeLeft = Math.floor(interval / 1000);
+    let lastUpdateTime = Date.now();
 
-    // Update timeLeft in storage
+    // Update timeLeft in storage immediately
     this.updateTrackingTimeLeft(trackingId, timeLeft);
 
-    // Countdown interval
+    // Countdown interval - update every second using Date diff for accuracy
     const countdown = setInterval(() => {
-      timeLeft--;
-      this.updateTrackingTimeLeft(trackingId, timeLeft);
+      const now = Date.now();
+      const elapsed = Math.floor((now - lastUpdateTime) / 1000);
+      
+      if (elapsed >= 1) {
+        timeLeft -= elapsed;
+        lastUpdateTime = now;
+        
+        if (timeLeft > 0) {
+          this.updateTrackingTimeLeft(trackingId, timeLeft);
+        }
+      }
       
       if (timeLeft <= 0) {
         clearInterval(countdown);
+        this.updateTrackingTimeLeft(trackingId, 0);
       }
-    }, 1000);
+    }, 100);
 
     // Main refresh timer
     const timer = setTimeout(() => {
       clearInterval(countdown);
+      this.timers.delete(trackingId);
       this.refreshPage(trackingId, tracking.url);
     }, interval);
 
-    this.timers.set(trackingId, { timer, countdown, timeLeft });
+    this.timers.set(trackingId, { timer, countdown, timeLeft, startTime: Date.now(), interval });
   }
 
   refreshPage(trackingId, url) {
@@ -187,8 +228,11 @@ class MultiPageTrackerService {
 
       chrome.tabs.reload(tabId, { bypassCache: true }, () => {
         // After reload, content script will check for changes
-        // Reschedule next refresh
-        this.scheduleNextRefresh(trackingId, tracking.minInterval, tracking.maxInterval);
+        // Only reschedule if tracking is still active
+        const currentTracking = this.trackings.get(trackingId);
+        if (currentTracking && currentTracking.isTracking !== false) {
+          this.scheduleNextRefresh(trackingId, currentTracking.minInterval, currentTracking.maxInterval);
+        }
       });
     });
   }
