@@ -4,58 +4,196 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Page Tracker Dashboard</title>
-    <link rel="stylesheet" href="dashboard.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-    <div class="dashboard-container">
-        <aside class="sidebar">
-            <div class="logo-area">
-                <img src="icons/icon48.png" alt="Logo">
-                <h2>Page Tracker</h2>
+<body class="bg-slate-950 text-slate-100 h-screen overflow-hidden">
+    <div class="flex h-full">
+        <!-- Sidebar -->
+        <aside class="w-72 bg-slate-900 border-r border-slate-800 flex flex-col">
+            <!-- Logo -->
+            <div class="p-6 border-b border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="font-semibold text-lg text-white">Page Tracker</h1>
+                        <p class="text-xs text-slate-400">Monitor multiple pages</p>
+                    </div>
+                </div>
             </div>
-            <nav>
-                <div class="nav-item active">Overview</div>
-                <div class="nav-item">Settings</div>
-            </nav>
+
+            <!-- Active Trackings -->
+            <div class="flex-1 overflow-y-auto scrollbar-thin p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Trackings</h2>
+                    <button id="add-tracking-btn" class="p-1.5 hover:bg-slate-800 rounded-lg transition-colors" title="Add new tracking">
+                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <nav id="trackings-list" class="space-y-2">
+                    <!-- Trackings injected here -->
+                </nav>
+
+                <div id="empty-trackings" class="hidden text-center py-8">
+                    <div class="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                    </div>
+                    <p class="text-sm text-slate-500">No active trackings</p>
+                    <p class="text-xs text-slate-600 mt-1">Add a page to start monitoring</p>
+                </div>
+            </div>
+
+            <!-- Add Tracking Form -->
+            <div id="add-tracking-form" class="hidden border-t border-slate-800 p-4 bg-slate-850">
+                <h3 class="text-sm font-medium text-white mb-3">Add New Tracking</h3>
+                <div class="space-y-3">
+                    <input type="url" id="new-tracking-url" placeholder="https://example.com" 
+                        class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="number" id="new-min-interval" value="30" min="5" placeholder="Min (s)"
+                            class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+                        <input type="number" id="new-max-interval" value="60" min="5" placeholder="Max (s)"
+                            class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="cancel-add-tracking" class="flex-1 px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+                            Cancel
+                        </button>
+                        <button id="confirm-add-tracking" class="flex-1 px-3 py-2 text-sm bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors">
+                            Add
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Actions -->
+            <div class="p-4 border-t border-slate-800 space-y-2">
+                <button class="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Settings
+                </button>
+            </div>
         </aside>
 
-        <main class="main-content">
-            <header>
-                <h1>Tracker Overview</h1>
-                <div class="status-badge" id="global-status">
-                    <span class="dot"></span>
-                    <span class="text">Tracking Inactive</span>
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <!-- Header -->
+            <header class="h-16 border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm flex items-center justify-between px-8">
+                <div class="flex items-center gap-4">
+                    <h2 id="current-tracking-name" class="text-lg font-semibold text-white">Select a tracking</h2>
+                    <span id="global-status" class="hidden inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                        Inactive
+                    </span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="delete-tracking-btn" class="hidden p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors" title="Delete tracking">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                    <button id="open-page-btn" class="hidden px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        Open Page
+                    </button>
                 </div>
             </header>
 
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <span class="label">Total Changes</span>
-                    <span class="value" id="total-changes">0</span>
+            <!-- Content -->
+            <div id="main-content-area" class="flex-1 overflow-y-auto scrollbar-thin p-8">
+                <!-- Empty State -->
+                <div id="no-selection-state" class="flex flex-col items-center justify-center h-full text-center">
+                    <div class="w-20 h-20 bg-slate-800 rounded-2xl flex items-center justify-center mb-6">
+                        <svg class="w-10 h-10 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-white mb-2">No tracking selected</h3>
+                    <p class="text-slate-400 max-w-sm">Select an existing tracking from the sidebar or add a new page to monitor</p>
                 </div>
-                <div class="stat-card">
-                    <span class="label">Last Refresh</span>
-                    <span class="value" id="last-refresh">Never</span>
-                </div>
-                <div class="stat-card primary">
-                    <span class="label">Current URL</span>
-                    <span class="value" id="tracked-url-display">None</span>
+
+                <!-- Tracking Details -->
+                <div id="tracking-details" class="hidden space-y-6">
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="gradient-border bg-slate-900 rounded-xl p-5">
+                            <p class="text-sm text-slate-400 mb-1">Total Changes</p>
+                            <p id="stat-changes" class="text-2xl font-bold text-white">0</p>
+                        </div>
+                        <div class="gradient-border bg-slate-900 rounded-xl p-5">
+                            <p class="text-sm text-slate-400 mb-1">Next Refresh</p>
+                            <p id="stat-timer" class="text-2xl font-bold text-indigo-400">--</p>
+                        </div>
+                        <div class="gradient-border bg-slate-900 rounded-xl p-5">
+                            <p class="text-sm text-slate-400 mb-1">Interval</p>
+                            <p id="stat-interval" class="text-2xl font-bold text-white">--</p>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="flex items-center gap-4">
+                        <button id="toggle-tracking-btn" class="px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-lg transition-all flex items-center gap-2">
+                            <svg id="play-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <svg id="pause-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span id="toggle-text">Start Tracking</span>
+                        </button>
+                        
+                        <button id="refresh-now-btn" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-lg transition-colors flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Refresh Now
+                        </button>
+                    </div>
+
+                    <!-- Snapshots Section -->
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-white">Recent Snapshots</h3>
+                            <button id="clear-snapshots-btn" class="text-sm text-slate-400 hover:text-red-400 transition-colors">
+                                Clear All
+                            </button>
+                        </div>
+                        
+                        <div id="snapshots-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            <!-- Snapshots injected here -->
+                        </div>
+                        
+                        <div id="no-snapshots" class="hidden text-center py-12">
+                            <div class="w-16 h-16 bg-slate-800 rounded-xl flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <p class="text-slate-500">No snapshots yet</p>
+                            <p class="text-sm text-slate-600 mt-1">Changes will be captured automatically</p>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <section class="log-section">
-                <div class="section-header">
-                    <h3>Recent Snapshots</h3>
-                    <button id="clear-logs" class="outline-btn">Clear History</button>
-                </div>
-                <div class="snapshots-grid" id="snapshots-list">
-                    <!-- Snapshots will be injected here -->
-                    <div class="empty-state">No snapshots captured yet.</div>
-                </div>
-            </section>
         </main>
     </div>
+
     <script src="dashboard.js"></script>
 </body>
 </html>

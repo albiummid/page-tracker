@@ -1,57 +1,92 @@
-// Simple hash function for change detection
-function getPageContentHash() {
-    // We can use innerText for text content or innerHTML for structural changes
-    // Focusing on text content is often more reliable for "content" changes
-    const textContent = document.body.innerText;
-    
-    // A very basic string hash
+// Multi-Page Tracker Content Script
+(function() {
+  'use strict';
+
+  // Simple hash function for change detection
+  function getPageContentHash() {
+    const textContent = document.body.innerText || '';
     let hash = 0;
     for (let i = 0; i < textContent.length; i++) {
-        const char = textContent.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash |= 0; // Convert to 32bit integer
+      const char = textContent.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash |= 0;
     }
     return hash.toString();
-}
+  }
 
-function checkChange() {
-    console.log('Page Tracker: Checking for changes...');
+  // Get current URL
+  const currentUrl = window.location.href;
+
+  // Check for changes
+  function checkChange() {
+    console.log('Page Tracker: Checking for changes...', currentUrl);
+
     if (!document.body) {
-        console.log('Page Tracker: Body not ready, skipping check.');
-        return;
+      console.log('Page Tracker: Body not ready, skipping check.');
+      return;
     }
 
-    chrome.storage.local.get(['isTracking', 'lastContentHash', 'currentTrackedUrl'], (result) => {
-        if (!result.isTracking) {
-            console.log('Page Tracker: Tracking is disabled.');
-            return;
-        }
+    // Get all trackings and find matching one
+    chrome.storage.local.get(['trackings'], (result) => {
+      if (chrome.runtime.lastError) {
+        console.error('Page Tracker: Storage error', chrome.runtime.lastError);
+        return;
+      }
 
-        const currentUrl = window.location.href;
-        const currentHash = getPageContentHash();
-        
-        console.log('Page Tracker: Current URL:', currentUrl);
-        console.log('Page Tracker: Last Hash:', result.lastContentHash);
-        console.log('Page Tracker: Current Hash:', currentHash);
+      const trackings = result.trackings || [];
+      
+      // Find tracking that matches current URL
+      const matchingTracking = trackings.find(tracking => {
+        return tracking.isTracking && 
+               (currentUrl === tracking.url || 
+                currentUrl.startsWith(tracking.url) ||
+                tracking.url.includes(new URL(currentUrl).hostname));
+      });
 
-        if (result.currentTrackedUrl === currentUrl) {
-            if (result.lastContentHash && result.lastContentHash !== currentHash) {
-                console.log('Page Tracker: Change detected! Sending message to background...');
-                chrome.runtime.sendMessage({ action: 'CONTENT_CHANGED', url: currentUrl });
-            } else {
-                console.log('Page Tracker: No changes detected.');
-            }
-        } else {
-            console.log('Page Tracker: URL changed or first run on this page.');
-            chrome.storage.local.set({ currentTrackedUrl: currentUrl });
-        }
+      if (!matchingTracking) {
+        console.log('Page Tracker: No active tracking found for', currentUrl);
+        return;
+      }
+
+      console.log('Page Tracker: Found matching tracking', matchingTracking.id);
+
+      const currentHash = getPageContentHash();
+      const lastHash = matchingTracking.lastContentHash;
+
+      console.log('Page Tracker: Last Hash:', lastHash);
+      console.log('Page Tracker: Current Hash:', currentHash);
+
+      // Check if content changed
+      if (lastHash && lastHash !== currentHash) {
+        console.log('Page Tracker: Change detected! Notifying background...');
         
-        chrome.storage.local.set({ lastContentHash: currentHash });
+        chrome.runtime.sendMessage({ 
+          action: 'CONTENT_CHANGED', 
+          trackingId: matchingTracking.id,
+          url: currentUrl
+        });
+      } else {
+        console.log('Page Tracker: No changes detected.');
+      }
+
+      // Update hash in storage
+      matchingTracking.lastContentHash = currentHash;
+      chrome.storage.local.set({ trackings: trackings });
     });
-}
+  }
 
-// Run comparison on load
-checkChange();
+  // Run comparison on load with a slight delay to ensure page is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(checkChange, 500);
+    });
+  } else {
+    setTimeout(checkChange, 500);
+  }
 
-// Optional: Observe DOM changes if we want real-time (but user asked for refresh-based)
-// The background script handles the refresh, and this script runs on setiap load.
+  // Also check after window load event (images and other resources loaded)
+  window.addEventListener('load', () => {
+    setTimeout(checkChange, 1000);
+  });
+
+})();

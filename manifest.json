@@ -34,7 +34,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["dashboard.html", "dashboard.js", "dashboard.css", "icons/*"],
+      "resources": ["dashboard.html", "dashboard.js", "styles.css", "popup.html", "popup.js", "icons/*"],
       "matches": ["<all_urls>"]
     }
   ],
