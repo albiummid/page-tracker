@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Tracker Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo-area">
+                <img src="icons/icon48.png" alt="Logo">
+                <h2>Page Tracker</h2>
+            </div>
+            <nav>
+                <div class="nav-item active">Overview</div>
+                <div class="nav-item">Settings</div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <h1>Tracker Overview</h1>
+                <div class="status-badge" id="global-status">
+                    <span class="dot"></span>
+                    <span class="text">Tracking Inactive</span>
+                </div>
+            </header>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="label">Total Changes</span>
+                    <span class="value" id="total-changes">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">Last Refresh</span>
+                    <span class="value" id="last-refresh">Never</span>
+                </div>
+                <div class="stat-card primary">
+                    <span class="label">Current URL</span>
+                    <span class="value" id="tracked-url-display">None</span>
+                </div>
+            </div>
+
+            <section class="log-section">
+                <div class="section-header">
+                    <h3>Recent Snapshots</h3>
+                    <button id="clear-logs" class="outline-btn">Clear History</button>
+                </div>
+                <div class="snapshots-grid" id="snapshots-list">
+                    <!-- Snapshots will be injected here -->
+                    <div class="empty-state">No snapshots captured yet.</div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="dashboard.js"></script>
+</body>
+</html>

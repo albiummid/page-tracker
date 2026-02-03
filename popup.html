@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Tracker</title>
+    <link rel="stylesheet" href="popup.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-area">
+                <img src="icons/icon48.png" alt="Logo" class="logo">
+                <h1>Page Tracker</h1>
+            </div>
+            <div class="status-indicator" id="status-indicator">
+                <div class="pulse"></div>
+                <span id="status-text">Idle</span>
+            </div>
+        </header>
+
+        <main>
+            <div class="control-card">
+                <div class="input-group">
+                    <label>Refresh Interval (seconds)</label>
+                    <div class="range-inputs">
+                        <input type="number" id="min-interval" value="30" min="1" placeholder="Min">
+                        <span>to</span>
+                        <input type="number" id="max-interval" value="40" min="1" placeholder="Max">
+                    </div>
+                </div>
+
+                <div class="toggle-group">
+                    <label class="switch">
+                        <input type="checkbox" id="tracking-toggle">
+                        <span class="slider round"></span>
+                    </label>
+                    <span class="toggle-label">Enable Tracking</span>
+                </div>
+            </div>
+
+            <div class="stats-card">
+                <div class="stat-item">
+                    <span class="label">Next Refresh in:</span>
+                    <span class="value" id="timer">--:--</span>
+                </div>
+                <div class="stat-item">
+                    <span class="label">Changes Found:</span>
+                    <span class="value" id="change-count">0</span>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <button id="view-snapshots" class="secondary-btn">View Snapshots</button>
+        </footer>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>
